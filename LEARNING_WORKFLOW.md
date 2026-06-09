@@ -254,7 +254,7 @@ claude> Scaffold matching-service in Go.
 
 ---
 
-### Phase 6 — RabbitMQ Fan-out (Key Concept Phase)
+### Phase 6 — Notification + RabbitMQ Fan-out (Key Concept Phase)
 
 **Step 1: Understand exchanges before coding**
 ```
@@ -385,6 +385,8 @@ claude> In my getMenu handler, the Redis call is inside a try-catch.
         - Add a counter: redis_errors_total
         Keep it minimal — just the error handling wrapper.
 ```
+
+### Phase 9 — AWS Migration
 
 **Step 1: Understand what changes and what doesn't**
 ```

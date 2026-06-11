@@ -1,4 +1,5 @@
 # RideFlow — Master Specification
+
 > Real-Time Food Delivery & Transport Platform  
 > Inspired by Grab / Lineman | Built for interview readiness & SDD learning
 
@@ -10,7 +11,7 @@ This file is the **single source of truth** for the entire RideFlow system.
 You will use it in two ways:
 
 1. **As a learning guide** — read each section before implementing, understand WHY before HOW
-2. **As a Claude Code prompt** — feed sections to Claude Code to scaffold implementation
+2. **As a Copilot CLI prompt** — feed sections to Copilot CLI to scaffold implementation
 
 > See `LEARNING_WORKFLOW.md` for the phase-by-phase learning loop.
 
@@ -21,7 +22,7 @@ You will use it in two ways:
 ```
 rideflow/
 ├── SPEC.md                          ← This file (master spec)
-├── CLAUDE.md                        ← Claude Code project context
+├── copilot-instructions.md                        ← Copilot CLI project context
 ├── LEARNING_WORKFLOW.md             ← SDD learning loop guide
 ├── specs/
 │   ├── phase-1-foundation.md
@@ -81,15 +82,15 @@ It handles order placement, driver matching, live GPS tracking, payments, and no
 
 ### Business Requirements
 
-| Requirement | Target | Why It Matters |
-|---|---|---|
-| Order throughput | 5,000 orders/min peak | Thai lunch/dinner rush |
-| Driver match latency | < 2 seconds | User experience |
-| Location update frequency | Every 3 seconds per driver | Accurate ETA |
-| Notification delivery | < 5 seconds after event | Trust & transparency |
-| Payment processing | Exactly-once, ordered | No double charge |
-| System availability | 99.9% uptime | Revenue protection |
-| Audit log retention | 90 days | Thai PDPA compliance |
+| Requirement               | Target                     | Why It Matters         |
+| ------------------------- | -------------------------- | ---------------------- |
+| Order throughput          | 5,000 orders/min peak      | Thai lunch/dinner rush |
+| Driver match latency      | < 2 seconds                | User experience        |
+| Location update frequency | Every 3 seconds per driver | Accurate ETA           |
+| Notification delivery     | < 5 seconds after event    | Trust & transparency   |
+| Payment processing        | Exactly-once, ordered      | No double charge       |
+| System availability       | 99.9% uptime               | Revenue protection     |
+| Audit log retention       | 90 days                    | Thai PDPA compliance   |
 
 ### Non-Functional Requirements
 
@@ -103,17 +104,17 @@ It handles order placement, driver matching, live GPS tracking, payments, and no
 
 ## 🧩 Microservice Overview
 
-| Service | Language | Primary Role | DB | Communicates Via |
-|---|---|---|---|---|
-| api-gateway | Node.js | Auth, rate limit, routing | — | HTTP (inbound), HTTP (to services) |
-| user-service | Go | Customer & driver profiles | PostgreSQL | HTTP (from gateway), Kafka (publish) |
-| order-service | Go | Order lifecycle state machine | PostgreSQL | Kafka (pub/sub) |
-| merchant-service | Node.js | Restaurant & menu management | PostgreSQL + **Redis (menu cache)** | HTTP (from gateway) |
-| matching-service | Go | Assign nearest driver to order | Redis | Kafka (pub/sub) |
-| location-service | Go | Real-time GPS ingestion & cache | Redis | Kafka (consume driver.location) |
-| notification-service | Node.js | Fan-out events to RabbitMQ/SNS | — | Kafka (consume), RabbitMQ/SNS (publish) |
-| payment-service | Go | Charge, refund, wallet | PostgreSQL | Kafka (pub/sub), RabbitMQ FIFO |
-| rating-service | Node.js | Post-delivery reviews | PostgreSQL | Kafka (consume), HTTP (from gateway) |
+| Service              | Language | Primary Role                    | DB                                  | Communicates Via                        |
+| -------------------- | -------- | ------------------------------- | ----------------------------------- | --------------------------------------- |
+| api-gateway          | Node.js  | Auth, rate limit, routing       | —                                   | HTTP (inbound), HTTP (to services)      |
+| user-service         | Go       | Customer & driver profiles      | PostgreSQL                          | HTTP (from gateway), Kafka (publish)    |
+| order-service        | Go       | Order lifecycle state machine   | PostgreSQL                          | Kafka (pub/sub)                         |
+| merchant-service     | Node.js  | Restaurant & menu management    | PostgreSQL + **Redis (menu cache)** | HTTP (from gateway)                     |
+| matching-service     | Go       | Assign nearest driver to order  | Redis                               | Kafka (pub/sub)                         |
+| location-service     | Go       | Real-time GPS ingestion & cache | Redis                               | Kafka (consume driver.location)         |
+| notification-service | Node.js  | Fan-out events to RabbitMQ/SNS  | —                                   | Kafka (consume), RabbitMQ/SNS (publish) |
+| payment-service      | Go       | Charge, refund, wallet          | PostgreSQL                          | Kafka (pub/sub), RabbitMQ FIFO          |
+| rating-service       | Node.js  | Post-delivery reviews           | PostgreSQL                          | Kafka (consume), HTTP (from gateway)    |
 
 ---
 
@@ -387,12 +388,12 @@ Merchant updates menu item
 
 #### Merchant Service — Redis Endpoints Summary
 
-| Endpoint | Redis Operation | Key | TTL |
-|---|---|---|---|
-| `GET /merchants/:id/menu` | GET → SET (on miss) | `menu:{merchant_id}` | 30 min |
-| `PUT /merchants/:id/menu-items/:item_id` | DEL (invalidate) | `menu:{merchant_id}` | — |
-| `POST /merchants/:id/menu-items` | DEL (invalidate) | `menu:{merchant_id}` | — |
-| `DELETE /merchants/:id/menu-items/:item_id` | DEL (invalidate) | `menu:{merchant_id}` | — |
+| Endpoint                                    | Redis Operation     | Key                  | TTL    |
+| ------------------------------------------- | ------------------- | -------------------- | ------ |
+| `GET /merchants/:id/menu`                   | GET → SET (on miss) | `menu:{merchant_id}` | 30 min |
+| `PUT /merchants/:id/menu-items/:item_id`    | DEL (invalidate)    | `menu:{merchant_id}` | —      |
+| `POST /merchants/:id/menu-items`            | DEL (invalidate)    | `menu:{merchant_id}` | —      |
+| `DELETE /merchants/:id/menu-items/:item_id` | DEL (invalidate)    | `menu:{merchant_id}` | —      |
 
 #### Merchant Service — New Endpoints (add to API spec)
 
@@ -421,21 +422,22 @@ Redis: DEL menu:{merchant_id}  ← invalidate after DB delete
 
 ```javascript
 // Cache-Aside: read
-const cached = await redis.get(`menu:${merchantId}`)
-if (cached) return JSON.parse(cached)           // HIT
+const cached = await redis.get(`menu:${merchantId}`);
+if (cached) return JSON.parse(cached); // HIT
 
 // Cache-Aside: populate after DB read
 await redis.set(
   `menu:${merchantId}`,
   JSON.stringify(menuItems),
-  'EX', 1800                                    // TTL in seconds
-)
+  "EX",
+  1800, // TTL in seconds
+);
 
 // Invalidate on write
-await redis.del(`menu:${merchantId}`)
+await redis.del(`menu:${merchantId}`);
 
 // Inspect TTL (useful for debugging)
-const ttl = await redis.ttl(`menu:${merchantId}`)
+const ttl = await redis.ttl(`menu:${merchantId}`);
 // Returns: remaining seconds, -1 (no TTL), -2 (key not found)
 ```
 
@@ -470,13 +472,13 @@ Target: > 80% during lunch/dinner peak
 
 #### Interview Talking Points
 
-> *"Why Cache-Aside and not Write-Through for menu data?"*  
+> _"Why Cache-Aside and not Write-Through for menu data?"_  
 > Write-Through updates the cache on every DB write — good when you always want the cache populated. Cache-Aside only populates on demand — better for menu data because some merchants may have zero traffic, so we avoid warming a cache nobody reads.
 
-> *"What happens if Redis goes down?"*  
+> _"What happens if Redis goes down?"_  
 > The merchant-service falls back to PostgreSQL directly. We wrap the Redis call in try-catch — on any Redis error, we skip cache and serve from DB. The system degrades gracefully, just slower.
 
-> *"How do you prevent cache stampede?"*  
+> _"How do you prevent cache stampede?"_  
 > During high traffic, if the cache expires and 1000 requests hit simultaneously, all go to DB at once. Solution: use a short-TTL lock key (`menu:lock:{merchant_id}`) — first request acquires the lock, rebuilds cache, others wait or serve stale. We can implement this in Phase 7 as an advanced task.
 
 ---
@@ -488,18 +490,18 @@ Target: > 80% during lunch/dinner peak
 
 ### Topic Configuration
 
-| Topic | Partitions | Replication Factor | Retention | Description |
-|---|---|---|---|---|
-| `order.created` | 6 | 1 (dev) / 3 (prod) | 7 days | New order placed by customer |
-| `order.assigned` | 6 | 1 / 3 | 7 days | Driver assigned by matching service |
-| `order.accepted` | 6 | 1 / 3 | 7 days | Driver confirmed pickup |
-| `order.picked_up` | 6 | 1 / 3 | 7 days | Driver picked up food |
-| `order.delivered` | 6 | 1 / 3 | 7 days | Delivery completed |
-| `order.cancelled` | 6 | 1 / 3 | 7 days | Order cancelled (any party) |
-| `driver.location` | 12 | 1 / 3 | 1 hour | High-freq GPS updates |
-| `payment.requested` | 6 | 1 / 3 | 7 days | Payment trigger after delivery |
-| `payment.completed` | 6 | 1 / 3 | 7 days | Payment success confirmation |
-| `notification.send` | 6 | 1 / 3 | 1 day | Generic notification trigger |
+| Topic               | Partitions | Replication Factor | Retention | Description                         |
+| ------------------- | ---------- | ------------------ | --------- | ----------------------------------- |
+| `order.created`     | 6          | 1 (dev) / 3 (prod) | 7 days    | New order placed by customer        |
+| `order.assigned`    | 6          | 1 / 3              | 7 days    | Driver assigned by matching service |
+| `order.accepted`    | 6          | 1 / 3              | 7 days    | Driver confirmed pickup             |
+| `order.picked_up`   | 6          | 1 / 3              | 7 days    | Driver picked up food               |
+| `order.delivered`   | 6          | 1 / 3              | 7 days    | Delivery completed                  |
+| `order.cancelled`   | 6          | 1 / 3              | 7 days    | Order cancelled (any party)         |
+| `driver.location`   | 12         | 1 / 3              | 1 hour    | High-freq GPS updates               |
+| `payment.requested` | 6          | 1 / 3              | 7 days    | Payment trigger after delivery      |
+| `payment.completed` | 6          | 1 / 3              | 7 days    | Payment success confirmation        |
+| `notification.send` | 6          | 1 / 3              | 1 day     | Generic notification trigger        |
 
 ### Message Schemas (JSON)
 
@@ -624,12 +626,12 @@ EXCHANGE: dlx.exchange (Dead Letter Exchange)
 
 ### Queue Configuration
 
-| Queue | Type | Max Retries | DLQ | TTL |
-|---|---|---|---|---|
-| `email.queue` | Standard | 3 | `dlq.email` | — |
-| `sms.queue` | Standard | 3 | `dlq.sms` | — |
-| `rating.reminder.queue` | Standard + TTL | 3 | — | 30 min delay |
-| `payment.queue` | Quorum (FIFO-like) | 5 | `dlq.payment` | — |
+| Queue                   | Type               | Max Retries | DLQ           | TTL          |
+| ----------------------- | ------------------ | ----------- | ------------- | ------------ |
+| `email.queue`           | Standard           | 3           | `dlq.email`   | —            |
+| `sms.queue`             | Standard           | 3           | `dlq.sms`     | —            |
+| `rating.reminder.queue` | Standard + TTL     | 3           | —             | 30 min delay |
+| `payment.queue`         | Quorum (FIFO-like) | 5           | `dlq.payment` | —            |
 
 ### Message Flow
 
@@ -661,23 +663,23 @@ Publish to payment.direct exchange
 
 ### SNS Topics
 
-| Topic Name | Publisher | Purpose |
-|---|---|---|
-| `rideflow-order-events` | Notification Service | Fan-out order state changes to SQS queues |
-| `rideflow-system-alerts` | CloudWatch Alarms | Ops alerts via email/PagerDuty |
-| `rideflow-driver-surge` | Matching Service | Surge pricing alerts to regions |
+| Topic Name               | Publisher            | Purpose                                   |
+| ------------------------ | -------------------- | ----------------------------------------- |
+| `rideflow-order-events`  | Notification Service | Fan-out order state changes to SQS queues |
+| `rideflow-system-alerts` | CloudWatch Alarms    | Ops alerts via email/PagerDuty            |
+| `rideflow-driver-surge`  | Matching Service     | Surge pricing alerts to regions           |
 
 ### SQS Queues
 
-| Queue Name | Type | Subscribed SNS | Visibility Timeout | DLQ | Max Receive |
-|---|---|---|---|---|---|
-| `rideflow-email-queue` | Standard | `rideflow-order-events` | 30s | `rideflow-dlq-email` | 3 |
-| `rideflow-sms-queue` | Standard | `rideflow-order-events` | 30s | `rideflow-dlq-sms` | 3 |
-| `rideflow-rating-reminder-queue` | Standard | `rideflow-order-events` | 30min delay | — | 3 |
-| `rideflow-payment-queue` | **FIFO** | Direct publish | 60s | `rideflow-dlq-payment.fifo` | 5 |
-| `rideflow-dlq-email` | Standard | — | 300s | — | — |
-| `rideflow-dlq-sms` | Standard | — | 300s | — | — |
-| `rideflow-dlq-payment` | FIFO | — | 300s | — | — |
+| Queue Name                       | Type     | Subscribed SNS          | Visibility Timeout | DLQ                         | Max Receive |
+| -------------------------------- | -------- | ----------------------- | ------------------ | --------------------------- | ----------- |
+| `rideflow-email-queue`           | Standard | `rideflow-order-events` | 30s                | `rideflow-dlq-email`        | 3           |
+| `rideflow-sms-queue`             | Standard | `rideflow-order-events` | 30s                | `rideflow-dlq-sms`          | 3           |
+| `rideflow-rating-reminder-queue` | Standard | `rideflow-order-events` | 30min delay        | —                           | 3           |
+| `rideflow-payment-queue`         | **FIFO** | Direct publish          | 60s                | `rideflow-dlq-payment.fifo` | 5           |
+| `rideflow-dlq-email`             | Standard | —                       | 300s               | —                           | —           |
+| `rideflow-dlq-sms`               | Standard | —                       | 300s               | —                           | —           |
+| `rideflow-dlq-payment`           | FIFO     | —                       | 300s               | —                           | —           |
 
 ### SNS → SQS Fan-out Flow (replaces RabbitMQ on AWS)
 
@@ -708,20 +710,20 @@ SQS FIFO: payment-queue
 All external traffic enters via API Gateway at port `8080`.  
 JWT validation happens here before forwarding.
 
-| Method | Path | Forward To | Auth Required |
-|---|---|---|---|
-| POST | `/auth/register` | user-service:8001 | No |
-| POST | `/auth/login` | user-service:8001 | No |
-| GET | `/users/me` | user-service:8001 | Yes |
-| PUT | `/drivers/status` | user-service:8001 | Yes (driver) |
-| GET | `/merchants` | merchant-service:8002 | No |
-| GET | `/merchants/:id/menu` | merchant-service:8002 | No |
-| POST | `/orders` | order-service:8003 | Yes (customer) |
-| GET | `/orders/:id` | order-service:8003 | Yes |
-| PUT | `/orders/:id/status` | order-service:8003 | Yes (driver) |
-| POST | `/locations` | location-service:8004 | Yes (driver) |
-| GET | `/ratings/:order_id` | rating-service:8005 | Yes |
-| POST | `/ratings` | rating-service:8005 | Yes (customer) |
+| Method | Path                  | Forward To            | Auth Required  |
+| ------ | --------------------- | --------------------- | -------------- |
+| POST   | `/auth/register`      | user-service:8001     | No             |
+| POST   | `/auth/login`         | user-service:8001     | No             |
+| GET    | `/users/me`           | user-service:8001     | Yes            |
+| PUT    | `/drivers/status`     | user-service:8001     | Yes (driver)   |
+| GET    | `/merchants`          | merchant-service:8002 | No             |
+| GET    | `/merchants/:id/menu` | merchant-service:8002 | No             |
+| POST   | `/orders`             | order-service:8003    | Yes (customer) |
+| GET    | `/orders/:id`         | order-service:8003    | Yes            |
+| PUT    | `/orders/:id/status`  | order-service:8003    | Yes (driver)   |
+| POST   | `/locations`          | location-service:8004 | Yes (driver)   |
+| GET    | `/ratings/:order_id`  | rating-service:8005   | Yes            |
+| POST   | `/ratings`            | rating-service:8005   | Yes (customer) |
 
 ### User Service — Endpoints
 
@@ -884,10 +886,10 @@ metadata:
   namespace: rideflow
 spec:
   kafka:
-    replicas: 1          # 3 for production
+    replicas: 1 # 3 for production
     version: 3.7.0
     storage:
-      type: ephemeral    # persistent for production
+      type: ephemeral # persistent for production
     listeners:
       - name: plain
         port: 9092
@@ -917,7 +919,7 @@ spec:
   partitions: 6
   replicas: 1
   config:
-    retention.ms: 604800000   # 7 days
+    retention.ms: 604800000 # 7 days
     cleanup.policy: delete
 ```
 
@@ -986,14 +988,14 @@ payment_processed_total{status}
 
 ### Grafana Dashboards to Build
 
-| Dashboard | Key Panels |
-|---|---|
-| **Order Flow** | Orders/min, delivery success rate, cancellation rate |
-| **Driver Matching** | Match latency p50/p95/p99, active drivers, queue depth |
-| **Location Tracking** | GPS updates/sec, location service lag |
-| **Kafka Health** | Consumer lag per group, message rate per topic |
-| **Payment** | Payment success rate, DLQ depth, processing time |
-| **Infrastructure** | Pod CPU/Memory, node status, HPA scaling events |
+| Dashboard             | Key Panels                                             |
+| --------------------- | ------------------------------------------------------ |
+| **Order Flow**        | Orders/min, delivery success rate, cancellation rate   |
+| **Driver Matching**   | Match latency p50/p95/p99, active drivers, queue depth |
+| **Location Tracking** | GPS updates/sec, location service lag                  |
+| **Kafka Health**      | Consumer lag per group, message rate per topic         |
+| **Payment**           | Payment success rate, DLQ depth, processing time       |
+| **Infrastructure**    | Pod CPU/Memory, node status, HPA scaling events        |
 
 ### Kibana Index Patterns
 
@@ -1010,18 +1012,18 @@ rideflow-errors-*      → all error logs across services
 
 ### Service Mapping
 
-| On-Premise | AWS Service | Config Notes |
-|---|---|---|
-| Minikube | **EKS** | Node group: t3.medium x3 |
-| Kafka (Strimzi) | **Amazon MSK** | kafka.t3.small, 3 brokers |
-| Redis | **ElastiCache for Redis** | cache.t3.micro cluster mode |
-| PostgreSQL | **Aurora PostgreSQL** | db.t3.medium, Multi-AZ |
-| Elasticsearch + Kibana | **Amazon OpenSearch** | t3.small.search |
-| RabbitMQ | **Amazon SQS + SNS** | See SNS/SQS spec above |
-| Nginx Ingress | **AWS Load Balancer Controller + ALB** | SSL termination |
-| Local Registry | **Amazon ECR** | One repo per service |
-| Manual deploy | **CodePipeline + CodeBuild** | Build → push ECR → deploy EKS |
-| Prometheus/Grafana | **CloudWatch + Amazon Managed Grafana** | IRSA for metrics |
+| On-Premise             | AWS Service                             | Config Notes                  |
+| ---------------------- | --------------------------------------- | ----------------------------- |
+| Minikube               | **EKS**                                 | Node group: t3.medium x3      |
+| Kafka (Strimzi)        | **Amazon MSK**                          | kafka.t3.small, 3 brokers     |
+| Redis                  | **ElastiCache for Redis**               | cache.t3.micro cluster mode   |
+| PostgreSQL             | **Aurora PostgreSQL**                   | db.t3.medium, Multi-AZ        |
+| Elasticsearch + Kibana | **Amazon OpenSearch**                   | t3.small.search               |
+| RabbitMQ               | **Amazon SQS + SNS**                    | See SNS/SQS spec above        |
+| Nginx Ingress          | **AWS Load Balancer Controller + ALB**  | SSL termination               |
+| Local Registry         | **Amazon ECR**                          | One repo per service          |
+| Manual deploy          | **CodePipeline + CodeBuild**            | Build → push ECR → deploy EKS |
+| Prometheus/Grafana     | **CloudWatch + Amazon Managed Grafana** | IRSA for metrics              |
 
 ### VPC Design
 
@@ -1060,14 +1062,17 @@ all-services-sa      → CloudWatch:PutMetricData
 ## 📅 Workshop Phases
 
 ### Phase 1 — Foundation (Week 1)
+
 **Goal:** Understand and run the full infrastructure stack locally
 
 **Learning objectives:**
+
 - Understand what Minikube is and how K8s works locally
 - Understand Kafka's role as event bus (producers, consumers, topics, partitions)
 - Understand why each infrastructure component exists
 
 **Tasks:**
+
 1. Install Minikube, kubectl, Helm
 2. Deploy Kafka via Strimzi Operator
 3. Deploy Redis (Helm)
@@ -1081,15 +1086,18 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 2 — User Service (Week 2)
+
 **Goal:** Build first Go microservice with JWT auth
 
 **Learning objectives:**
+
 - Go project structure for a microservice
 - JWT authentication pattern
 - Database per service — why and how
 - Dockerize a Go app
 
 **Tasks:**
+
 1. Scaffold user-service in Go (chi or gin router)
 2. Implement register, login, get profile endpoints
 3. JWT middleware
@@ -1103,15 +1111,18 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 3 — Order Service + Kafka Producer (Week 3)
+
 **Goal:** Implement order state machine and first Kafka publish
 
 **Learning objectives:**
+
 - State machine pattern for order lifecycle
 - Kafka producer in Go (Sarama or confluent-kafka-go)
 - Idempotency key pattern
 - Event-driven design: why we publish instead of calling matching service directly
 
 **Tasks:**
+
 1. Scaffold order-service in Go
 2. Implement order CRUD with state machine
 3. On order creation → publish to `order.created` Kafka topic
@@ -1123,15 +1134,18 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 4 — Matching Service + Kafka Consumer (Week 4)
+
 **Goal:** Consume Kafka events, implement Redis GeoHash driver matching
 
 **Learning objectives:**
+
 - Kafka consumer groups and offset management
 - Redis GEO commands (GEOADD, GEORADIUS)
 - Why matching uses Redis not PostgreSQL (speed)
 - Your roadside dispatch experience maps here
 
 **Tasks:**
+
 1. Scaffold matching-service in Go
 2. Consume `order.created` topic
 3. Query Redis GEO for nearest available driver
@@ -1144,15 +1158,18 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 5 — Location Service + High-Freq Kafka (Week 5)
+
 **Goal:** Handle high-frequency GPS stream efficiently
 
 **Learning objectives:**
+
 - High-frequency Kafka topics (partitioning strategy by driver_id)
 - Redis as real-time position cache
 - Why 12 partitions for driver.location vs 6 for orders
 - Backpressure handling
 
 **Tasks:**
+
 1. Scaffold location-service in Go
 2. HTTP endpoint: driver posts GPS every 3s
 3. Publish to `driver.location` Kafka (partitioned by driver_id)
@@ -1165,15 +1182,18 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 6 — Notification + RabbitMQ Fan-out (Week 6)
+
 **Goal:** Implement async notification fan-out via RabbitMQ
 
 **Learning objectives:**
+
 - RabbitMQ exchanges (fanout vs direct vs topic)
 - Dead Letter Queue pattern
 - Async worker pattern in Node.js
 - Why RabbitMQ for this instead of more Kafka topics
 
 **Tasks:**
+
 1. Scaffold notification-service in Node.js
 2. Consume `order.delivered`, `order.assigned` etc. from Kafka
 3. Publish to RabbitMQ fanout exchange
@@ -1188,9 +1208,11 @@ all-services-sa      → CloudWatch:PutMetricData
 ---
 
 ### Phase 7 — Payment + Merchant + Rating (Week 7)
+
 **Goal:** Complete remaining services, implement FIFO payment queue, and practice Redis Cache-Aside pattern
 
 **Learning objectives:**
+
 - FIFO queue pattern (exactly-once, ordered processing)
 - Idempotency key in payment — why critical
 - **Redis Cache-Aside pattern** — the most common Redis pattern in production
@@ -1199,6 +1221,7 @@ all-services-sa      → CloudWatch:PutMetricData
 - Graceful degradation — what happens when Redis is unavailable
 
 **Tasks:**
+
 1. Scaffold payment-service in Go
 2. Consume `order.delivered`, publish to RabbitMQ payment.queue (FIFO/Quorum)
 3. Payment worker: deduct wallet, idempotency check, publish `payment.completed`
@@ -1229,15 +1252,18 @@ thundering herd when cache expires during peak traffic.
 ---
 
 ### Phase 8 — Observability (Week 8)
+
 **Goal:** Full visibility into system health and business metrics
 
 **Learning objectives:**
+
 - Prometheus scraping pattern (pull model)
 - Grafana dashboard design
 - Kafka consumer lag as key health signal
 - Structured logging for Kibana
 
 **Tasks:**
+
 1. Add Prometheus metrics to all services
 2. Deploy Prometheus + Grafana via Helm
 3. Build 4 core dashboards (Order Flow, Matching, Kafka Health, Infrastructure)
@@ -1250,9 +1276,11 @@ thundering herd when cache expires during peak traffic.
 ---
 
 ### Phase 9 — AWS Migration (Week 9)
+
 **Goal:** Deploy same system to AWS, replace on-prem tools with managed services
 
 **Learning objectives:**
+
 - EKS vs Minikube differences
 - MSK configuration (why managed Kafka)
 - SNS + SQS replacing RabbitMQ
@@ -1260,6 +1288,7 @@ thundering herd when cache expires during peak traffic.
 - Aurora vs plain PostgreSQL
 
 **Tasks:**
+
 1. Push all images to ECR
 2. Create EKS cluster (eksctl)
 3. Deploy K8s manifests (same YAML, update image URLs)
@@ -1276,15 +1305,18 @@ thundering herd when cache expires during peak traffic.
 ---
 
 ### Phase 10 — Hardening + Interview Prep (Week 10)
+
 **Goal:** Production-grade polish and interview confidence
 
 **Learning objectives:**
+
 - CI/CD pipeline design
 - Load testing methodology
 - Failure mode analysis
 - Architecture walkthrough skills
 
 **Tasks:**
+
 1. Set up CodePipeline → CodeBuild → ECR → EKS deploy
 2. Add WAF to ALB
 3. Configure Secrets Manager rotation
@@ -1299,12 +1331,15 @@ thundering herd when cache expires during peak traffic.
 ## 🎤 Interview Answer Templates
 
 ### "Design a real-time food delivery matching system"
+
 > "I built this. We have an Order Service that publishes to a Kafka topic when an order is created. The Matching Service consumes that topic and queries Redis GEO commands to find the nearest available driver. Driver availability is maintained via a separate high-frequency location stream — also through Kafka — that updates Redis with a short TTL. Once matched, we publish to order.assigned, which multiple consumer groups pick up independently: Order Service updates DB state, Notification Service fans out to RabbitMQ queues for push/SMS, and Location Service starts tracking."
 
 ### "Kafka vs SQS — when do you use which?"
+
 > "Kafka for high-throughput, replayable, ordered event streams between internal services — like our order lifecycle and location updates. SQS for isolated async task queues where one worker picks up one job — like payment processing where we need exactly-once semantics and a FIFO guarantee. On AWS we also add SNS in front of SQS for fan-out: one SNS publish fans out to email queue, SMS queue, and rating reminder queue without the publisher knowing how many downstream consumers exist."
 
 ### "How do you handle a service crashing without losing data?"
+
 > "Kafka retains messages based on retention policy — 7 days for order events. When a service recovers, it continues from its last committed offset. For RabbitMQ queues, messages are durable and survive broker restart. For the payment queue specifically, we use a Quorum queue in RabbitMQ (FIFO-equivalent) with a DLQ, so failed payments never disappear — they land in the DLQ and trigger a CloudWatch alarm."
 
 ---
@@ -1314,7 +1349,7 @@ thundering herd when cache expires during peak traffic.
 Imagine RideFlow is a **really organized toy delivery service** at school:
 
 - **Kafka** is the **school announcement board** — when something happens (new order, driver found, food picked up), someone writes it on the board. Different people read different sections of the board.
-- **RabbitMQ / SQS** is a **to-do tray on each teacher's desk** — the board tells the teacher *"send this kid an SMS"*, the task goes in the tray, and the teacher does it one by one.
+- **RabbitMQ / SQS** is a **to-do tray on each teacher's desk** — the board tells the teacher _"send this kid an SMS"_, the task goes in the tray, and the teacher does it one by one.
 - **SNS** is the **school PA system** — one announcement automatically goes to every classroom at once.
 - **Redis** is a **whiteboard near the door** showing where every delivery person is right now — very fast to read.
 - **Kubernetes** is the **school principal** — if a teacher is sick (pod crashes), the principal immediately finds a replacement. If too many orders come in (lunch rush), the principal adds more teachers automatically.

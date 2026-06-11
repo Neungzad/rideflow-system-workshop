@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Vocabulary — RideFlow</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+            border-bottom: 1px solid #2d3748;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: #63b3ed;
+            margin-bottom: .4rem;
+        }
+
+        header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            justify-content: center;
+            padding: 1.2rem 2rem;
+            background: #1a1f2e;
+            border-bottom: 1px solid #2d3748;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #90cdf4;
+            background: #2d3748;
+            padding: .3rem .9rem;
+            border-radius: 999px;
+            font-size: .82rem;
+            transition: background .2s;
+        }
+
+        nav a:hover {
+            background: #4a5568;
+        }
+
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* ── Section ── */
+        .section {
+            margin-bottom: 3.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.35rem;
+            color: #63b3ed;
+            border-left: 4px solid #63b3ed;
+            padding-left: .75rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .section p {
+            color: #a0aec0;
+            margin-bottom: .8rem;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 1.1rem 1.4rem;
+            margin-bottom: 1rem;
+            transition: border-color .2s, transform .15s;
+            cursor: default;
+        }
+
+        .card:hover {
+            border-color: #63b3ed;
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            margin-bottom: .5rem;
+        }
+
+        .card-icon {
+            font-size: 1.4rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card-badge {
+            margin-left: auto;
+            font-size: .7rem;
+            padding: .15rem .55rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .badge-infra {
+            background: #2b4c7e;
+            color: #90cdf4;
+        }
+
+        .badge-app {
+            background: #2d3a1e;
+            color: #9ae6b4;
+        }
+
+        .badge-config {
+            background: #3d2b1e;
+            color: #fbd38d;
+        }
+
+        .badge-net {
+            background: #3d1e3d;
+            color: #f6a8ff;
+        }
+
+        .badge-storage {
+            background: #1e2d3d;
+            color: #76e4f7;
+        }
+
+        .card-desc {
+            color: #a0aec0;
+            font-size: .9rem;
+        }
+
+        .card-example {
+            margin-top: .6rem;
+            background: #0f1117;
+            border-left: 3px solid #4a5568;
+            padding: .5rem .8rem;
+            font-family: "SF Mono", "Fira Code", monospace;
+            font-size: .8rem;
+            color: #68d391;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .card-example span {
+            color: #90cdf4;
+        }
+
+        /* ── Grid ── */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Diagram ── */
+        .diagram {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram h3 {
+            text-align: center;
+            font-size: .9rem;
+            color: #718096;
+            margin-bottom: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        /* ── Flow diagram (flexbox) ── */
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .flow-box {
+            background: #2d3748;
+            border: 1.5px solid #4a5568;
+            border-radius: 8px;
+            padding: .5rem 1rem;
+            font-size: .85rem;
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .flow-box.highlight {
+            border-color: #63b3ed;
+            color: #63b3ed;
+        }
+
+        .flow-box.green {
+            border-color: #68d391;
+            color: #68d391;
+        }
+
+        .flow-box.yellow {
+            border-color: #f6c90e;
+            color: #f6c90e;
+        }
+
+        .flow-box.purple {
+            border-color: #b794f4;
+            color: #b794f4;
+        }
+
+        .flow-arrow {
+            color: #4a5568;
+            font-size: 1.2rem;
+        }
+
+        /* ── Nested cluster diagram ── */
+        .cluster-box {
+            border: 2px dashed #63b3ed;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: .5rem 0;
+        }
+
+        .cluster-box .label {
+            font-size: .72rem;
+            color: #63b3ed;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: .7rem;
+        }
+
+        .node-box {
+            border: 2px dashed #68d391;
+            border-radius: 10px;
+            padding: .9rem;
+            margin: .5rem 0;
+        }
+
+        .node-box .label {
+            color: #68d391;
+        }
+
+        .ns-box {
+            border: 2px dashed #b794f4;
+            border-radius: 8px;
+            padding: .8rem;
+            margin: .5rem 0;
+        }
+
+        .ns-box .label {
+            color: #b794f4;
+        }
+
+        .pod-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-top: .5rem;
+        }
+
+        .pod-chip {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            padding: .3rem .7rem;
+            font-size: .78rem;
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .pod-chip .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #68d391;
+            display: inline-block;
+        }
+
+        .pod-chip .dot.yellow {
+            background: #f6c90e;
+        }
+
+        /* ── Lifecycle diagram ── */
+        .lifecycle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lc-step {
+            background: #2d3748;
+            border-radius: 8px;
+            padding: .4rem .9rem;
+            font-size: .82rem;
+        }
+
+        .lc-step.active {
+            background: #2b4c7e;
+            color: #90cdf4;
+            border: 1px solid #63b3ed;
+        }
+
+        .lc-step.warn {
+            background: #3d2b1e;
+            color: #fbd38d;
+            border: 1px solid #f6c90e;
+        }
+
+        .lc-arrow {
+            color: #4a5568;
+        }
+
+        /* ── Request flow ── */
+        .req-flow {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            font-size: .85rem;
+        }
+
+        .req-row {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+        }
+
+        .req-node {
+            background: #2d3748;
+            border-radius: 7px;
+            padding: .35rem .9rem;
+            white-space: nowrap;
+        }
+
+        .req-node.external {
+            border: 1px solid #f6c90e;
+            color: #f6c90e;
+        }
+
+        .req-node.ingress {
+            border: 1px solid #b794f4;
+            color: #b794f4;
+        }
+
+        .req-node.service {
+            border: 1px solid #63b3ed;
+            color: #63b3ed;
+        }
+
+        .req-node.pod {
+            border: 1px solid #68d391;
+            color: #68d391;
+        }
+
+        .req-node.db {
+            border: 1px solid #fc8181;
+            color: #fc8181;
+        }
+
+        .req-label {
+            color: #4a5568;
+            font-size: .75rem;
+            font-style: italic;
+        }
+
+        /* ── Table ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .88rem;
+        }
+
+        th {
+            background: #2d3748;
+            color: #90cdf4;
+            padding: .6rem 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: .55rem 1rem;
+            border-bottom: 1px solid #2d3748;
+            color: #a0aec0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #1a2233;
+        }
+
+        code {
+            background: #2d3748;
+            padding: .1rem .4rem;
+            border-radius: 4px;
+            font-family: "SF Mono", monospace;
+            font-size: .82rem;
+            color: #68d391;
+        }
+
+        /* ── Tip ── */
+        .tip {
+            background: #1a2e1a;
+            border-left: 4px solid #68d391;
+            border-radius: 0 8px 8px 0;
+            padding: .8rem 1rem;
+            margin: 1rem 0;
+            font-size: .88rem;
+            color: #9ae6b4;
+        }
+
+        .tip strong {
+            color: #68d391;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>☸️ Kubernetes Vocabulary</h1>
+        <p>Visual guide for the RideFlow workshop — learn the key concepts before touching code</p>
+    </header>
+
+    <nav>
+        <a href="#cluster">Cluster &amp; Node</a>
+        <a href="#namespace">Namespace</a>
+        <a href="#pod">Pod</a>
+        <a href="#workloads">Workloads</a>
+        <a href="#networking">Networking</a>
+        <a href="#config">Config &amp; Secrets</a>
+        <a href="#storage">Storage</a>
+        <a href="#scaling">Scaling</a>
+        <a href="#crd">CRD</a>
+        <a href="#cheatsheet">Cheat Sheet</a>
+    </nav>
+
+    <main>
+
+        <!-- ── CLUSTER & NODE ── -->
+        <div class="section" id="cluster">
+            <h2>🏗️ Cluster &amp; Node</h2>
+            <p>A <strong>Cluster</strong> is everything — all the machines and software that make up your Kubernetes
+                environment. A <strong>Node</strong> is one machine (real or virtual) inside the cluster.</p>
+
+            <div class="diagram">
+                <h3>Cluster Structure</h3>
+                <div class="cluster-box">
+                    <div class="label">☸️ CLUSTER (Minikube on your Mac)</div>
+                    <div class="node-box">
+                        <div class="label">💻 NODE — minikube (your laptop VM)</div>
+                        <div class="pod-row">
+                            <div class="pod-chip"><span class="dot"></span> kafka-broker</div>
+                            <div class="pod-chip"><span class="dot"></span> redis-master</div>
+                            <div class="pod-chip"><span class="dot"></span> rabbitmq</div>
+                            <div class="pod-chip"><span class="dot"></span> postgres-user</div>
+                            <div class="pod-chip"><span class="dot yellow"></span> user-service</div>
+                            <div class="pod-chip"><span class="dot yellow"></span> order-service</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip"><strong>In production</strong> (EKS on AWS): the cluster has 3+ nodes spread across
+                availability zones. Minikube = 1 node for local dev.</div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🌐</span>
+                        <span class="card-title">Cluster</span>
+                        <span class="card-badge badge-infra">infra</span>
+                    </div>
+                    <div class="card-desc">The entire Kubernetes environment. Contains all nodes, pods, and resources.
+                        In RideFlow: one Minikube cluster locally, one EKS cluster on AWS.</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">💻</span>
+                        <span class="card-title">Node</span>
+                        <span class="card-badge badge-infra">infra</span>
+                    </div>
+                    <div class="card-desc">One machine in the cluster. Runs pods. In Minikube you have 1 node. In
+                        production you'd have 3+ nodes for redundancy.</div>
+                    <div class="card-example"><span>kubectl</span> get nodes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── NAMESPACE ── -->
+        <div class="section" id="namespace">
+            <h2>📁 Namespace</h2>
+            <p>A <strong>Namespace</strong> is a logical folder inside the cluster. It separates teams, projects, or
+                environments so they don't interfere with each other.</p>
+
+            <div class="diagram">
+                <h3>Namespaces in the same cluster</h3>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
+                    <div class="ns-box" style="flex:1; min-width:160px;">
+                        <div class="label">📁 rideflow</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot"></span> kafka, redis</div>
+                            <div class="pod-chip"><span class="dot yellow"></span> user-service</div>
+                        </div>
+                    </div>
+                    <div class="ns-box" style="flex:1; min-width:160px;">
+                        <div class="label">📁 kube-system</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot"></span> coredns</div>
+                            <div class="pod-chip"><span class="dot"></span> kube-proxy</div>
+                        </div>
+                    </div>
+                    <div class="ns-box" style="flex:1; min-width:160px;">
+                        <div class="label">📁 monitoring</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot"></span> prometheus</div>
+                            <div class="pod-chip"><span class="dot"></span> grafana</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📁</span>
+                    <span class="card-title">Namespace</span>
+                    <span class="card-badge badge-infra">infra</span>
+                </div>
+                <div class="card-desc">We put all RideFlow resources in the <code>rideflow</code> namespace. This keeps
+                    them isolated from Kubernetes system pods. Always add <code>-n rideflow</code> to kubectl commands.
+                </div>
+                <div class="card-example">
+                    <span>kubectl</span> get pods -n rideflow<br>
+                    <span>kubectl</span> get all -n rideflow
+                </div>
+            </div>
+        </div>
+
+        <!-- ── POD ── -->
+        <div class="section" id="pod">
+            <h2>🫛 Pod</h2>
+            <p>A <strong>Pod</strong> is the smallest deployable unit in Kubernetes. It wraps one (or more) containers
+                and gives them a shared network and storage.</p>
+
+            <div class="diagram">
+                <h3>Pod Lifecycle</h3>
+                <div class="lifecycle">
+                    <div class="lc-step">Pending</div>
+                    <div class="lc-arrow">→</div>
+                    <div class="lc-step active">Running ✓</div>
+                    <div class="lc-arrow">→</div>
+                    <div class="lc-step">Succeeded</div>
+                </div>
+                <div style="height:.5rem"></div>
+                <div class="lifecycle">
+                    <div class="lc-step active">Running</div>
+                    <div class="lc-arrow">→</div>
+                    <div class="lc-step warn">CrashLoopBackOff ✗</div>
+                    <div class="lc-arrow">→</div>
+                    <div class="lc-step warn">Failed</div>
+                </div>
+                <p style="text-align:center; color:#718096; font-size:.8rem; margin-top:.8rem;">Pods are ephemeral —
+                    they can die. Deployments restart them automatically.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🫛</span>
+                    <span class="card-title">Pod</span>
+                    <span class="card-badge badge-app">app</span>
+                </div>
+                <div class="card-desc">One running instance of your app. Like a process. Has its own IP inside the
+                    cluster. <strong>Never create pods directly</strong> — use Deployments so K8s can restart them if
+                    they crash.</div>
+                <div class="card-example">
+                    <span>kubectl</span> get pods -n rideflow<br>
+                    <span>kubectl</span> logs &lt;pod-name&gt; -n rideflow -f<br>
+                    <span>kubectl</span> exec -it &lt;pod-name&gt; -n rideflow -- sh
+                </div>
+            </div>
+        </div>
+
+        <!-- ── WORKLOADS ── -->
+        <div class="section" id="workloads">
+            <h2>⚙️ Workloads — Deployment &amp; StatefulSet</h2>
+            <p>Workloads tell Kubernetes <em>how</em> to run your pods — how many replicas, how to update them, and how
+                to restart them.</p>
+
+            <div class="diagram">
+                <h3>Deployment vs StatefulSet</h3>
+                <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <div style="color:#63b3ed; font-size:.85rem; font-weight:700; margin-bottom:.6rem;">Deployment —
+                            stateless</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot yellow"></span> user-service-abc12</div>
+                            <div class="pod-chip"><span class="dot yellow"></span> user-service-xyz99</div>
+                        </div>
+                        <div style="color:#718096; font-size:.78rem; margin-top:.5rem;">Pods are identical &amp;
+                            interchangeable.<br>Any pod can die — another starts.</div>
+                    </div>
+                    <div style="flex:1; min-width:200px;">
+                        <div style="color:#68d391; font-size:.85rem; font-weight:700; margin-bottom:.6rem;">StatefulSet
+                            — stateful</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot"></span> postgres-user-0</div>
+                            <div class="pod-chip"><span class="dot"></span> kafka-broker-0</div>
+                        </div>
+                        <div style="color:#718096; font-size:.78rem; margin-top:.5rem;">Pods have stable names (-0, -1,
+                            -2).<br>Each keeps its own data volume.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔁</span>
+                        <span class="card-title">Deployment</span>
+                        <span class="card-badge badge-app">app</span>
+                    </div>
+                    <div class="card-desc">For <strong>stateless</strong> services like user-service, order-service,
+                        api-gateway. Manages replicas, rolling updates, auto-restart. "Keep 2 copies of this pod
+                        running."</div>
+                    <div class="card-example"><span>kubectl</span> get deployments -n rideflow</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📦</span>
+                        <span class="card-title">StatefulSet</span>
+                        <span class="card-badge badge-app">app</span>
+                    </div>
+                    <div class="card-desc">For <strong>stateful</strong> apps: Kafka, Redis, PostgreSQL, RabbitMQ. Pods
+                        get stable DNS names (<code>pod-0</code>, <code>pod-1</code>) and persistent storage.</div>
+                    <div class="card-example"><span>kubectl</span> get statefulsets -n rideflow</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── NETWORKING ── -->
+        <div class="section" id="networking">
+            <h2>🌐 Networking — Service &amp; Ingress</h2>
+            <p>Pods have temporary IPs that change when they restart. <strong>Services</strong> give a stable address.
+                <strong>Ingress</strong> is the front door from the internet.</p>
+
+            <div class="diagram">
+                <h3>How a request travels into your cluster</h3>
+                <div class="req-flow">
+                    <div class="req-row">
+                        <div class="req-node external">📱 User App</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="req-label">HTTP POST /orders</div>
+                    </div>
+                    <div class="req-row">
+                        <div style="width:20px"></div>
+                        <div class="flow-arrow">↓</div>
+                    </div>
+                    <div class="req-row">
+                        <div class="req-node ingress">🚪 Ingress (Nginx)<br><small>rideflow.local</small></div>
+                        <div class="flow-arrow">→</div>
+                        <div class="req-label">routes /orders → order-service</div>
+                    </div>
+                    <div class="req-row">
+                        <div style="width:20px"></div>
+                        <div class="flow-arrow">↓</div>
+                    </div>
+                    <div class="req-row">
+                        <div class="req-node service">🔵 Service<br><small>order-service:8002</small></div>
+                        <div class="flow-arrow">→</div>
+                        <div class="req-label">load balances to healthy pods</div>
+                    </div>
+                    <div class="req-row">
+                        <div style="width:20px"></div>
+                        <div class="flow-arrow">↓</div>
+                    </div>
+                    <div class="req-row">
+                        <div class="pod-row" style="margin:0">
+                            <div class="req-node pod">🫛 Pod-1</div>
+                            <div class="req-node pod">🫛 Pod-2</div>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="req-label">one pod handles the request</div>
+                    </div>
+                    <div class="req-row">
+                        <div style="width:20px"></div>
+                        <div class="flow-arrow">↓</div>
+                    </div>
+                    <div class="req-row">
+                        <div class="req-node db">🗄️ postgres-order:5432</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="req-label">pod talks to DB via Service DNS</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔵</span>
+                        <span class="card-title">Service</span>
+                        <span class="card-badge badge-net">network</span>
+                    </div>
+                    <div class="card-desc">A stable DNS name + port pointing to a set of pods. Even if pods restart and
+                        get new IPs, the Service address never changes. Types: <code>ClusterIP</code> (internal),
+                        <code>NodePort</code> (dev), <code>LoadBalancer</code> (cloud).</div>
+                    <div class="card-example">
+                        # Internal DNS format:<br>
+                        <span>service-name.namespace.svc.cluster.local</span><br><br>
+                        # e.g. Kafka broker:<br>
+                        <span>rideflow-kafka-kafka-bootstrap.rideflow.svc.cluster.local:9092</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🚪</span>
+                        <span class="card-title">Ingress</span>
+                        <span class="card-badge badge-net">network</span>
+                    </div>
+                    <div class="card-desc">The external front door. Routes HTTP/HTTPS traffic from outside the cluster
+                        to internal Services based on hostname or URL path. We use Nginx Ingress in RideFlow.</div>
+                    <div class="card-example">
+                        rideflow.local/api/users → user-service:8001<br>
+                        rideflow.local/api/orders → order-service:8002<br>
+                        rideflow.local/api/menu → merchant-service:8003
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CONFIG ── -->
+        <div class="section" id="config">
+            <h2>⚙️ ConfigMap &amp; Secret</h2>
+            <p>Store configuration outside your container image so you can change settings without rebuilding.</p>
+
+            <div class="diagram">
+                <h3>How pods read config</h3>
+                <div class="flow">
+                    <div class="flow-box yellow">ConfigMap<br><small>rideflow-config</small></div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box highlight">Pod (user-service)<br><small>env: KAFKA_BROKERS=...</small></div>
+                    <div class="flow-arrow">←</div>
+                    <div class="flow-box" style="border-color:#fc8181; color:#fc8181;">
+                        Secret<br><small>user-secrets</small></div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📋</span>
+                        <span class="card-title">ConfigMap</span>
+                        <span class="card-badge badge-config">config</span>
+                    </div>
+                    <div class="card-desc">Non-sensitive key-value pairs injected as environment variables. Our
+                        <code>rideflow-config</code> stores Kafka broker address, Redis host, environment name.</div>
+                    <div class="card-example">
+                        kafka_brokers: "rideflow-kafka-...:9092"<br>
+                        redis_host: "redis-master.rideflow..."<br>
+                        environment: "development"
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔐</span>
+                        <span class="card-title">Secret</span>
+                        <span class="card-badge badge-config">config</span>
+                    </div>
+                    <div class="card-desc">Sensitive data: passwords, API keys, JWT secrets. Base64-encoded in K8s.
+                        <strong>Never hardcode secrets</strong> in code or YAML — always reference from a Secret.</div>
+                    <div class="card-example">
+                        # user-secrets contains:<br>
+                        db_password: "..."<br>
+                        jwt_secret: "..."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── STORAGE ── -->
+        <div class="section" id="storage">
+            <h2>💾 Storage — PV &amp; PVC</h2>
+            <p>Pods are ephemeral — when they restart, their disk is wiped. <strong>PersistentVolumes</strong> survive
+                pod restarts.</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">💿</span>
+                        <span class="card-title">PersistentVolume (PV)</span>
+                        <span class="card-badge badge-storage">storage</span>
+                    </div>
+                    <div class="card-desc">A piece of storage provisioned by the admin (or auto-provisioned). Like a
+                        hard drive available in the cluster.</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">📎</span>
+                        <span class="card-title">PersistentVolumeClaim (PVC)</span>
+                        <span class="card-badge badge-storage">storage</span>
+                    </div>
+                    <div class="card-desc">A request for storage by a pod. "I need 5GB of disk." K8s matches the PVC to
+                        a PV. StatefulSets create PVCs automatically per replica.</div>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>In this workshop:</strong> we use <code>storage.type: ephemeral</code> for Kafka and
+                <code>persistence.enabled: false</code> for PostgreSQL. This means data is lost on restart — fine for
+                local dev, never for production.
+            </div>
+        </div>
+
+        <!-- ── SCALING ── -->
+        <div class="section" id="scaling">
+            <h2>📈 Scaling — HPA</h2>
+            <p>The <strong>HorizontalPodAutoscaler (HPA)</strong> watches CPU/memory and automatically adds or removes
+                pod replicas to handle load.</p>
+
+            <div class="diagram">
+                <h3>HPA in action — matching-service under load</h3>
+                <div style="display:flex; flex-direction:column; gap:.8rem; align-items:center;">
+                    <div style="color:#718096; font-size:.82rem;">CPU load increases (orders spike)</div>
+                    <div class="flow-arrow" style="font-size:1.5rem;">↓</div>
+                    <div class="flow">
+                        <div class="flow-box green">Pod 1 ✓</div>
+                        <div class="flow-box green">Pod 2 ✓</div>
+                        <div class="flow-box green">Pod 3 ✓ <small>new</small></div>
+                        <div class="flow-box green">Pod 4 ✓ <small>new</small></div>
+                    </div>
+                    <div style="color:#718096; font-size:.82rem;">HPA scaled from 2 → 4 replicas (max: 10)</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📈</span>
+                    <span class="card-title">HorizontalPodAutoscaler (HPA)</span>
+                    <span class="card-badge badge-app">app</span>
+                </div>
+                <div class="card-desc">In RideFlow, matching-service and location-service have HPAs. When driver GPS
+                    updates spike, location-service scales up automatically. Scales back down when quiet.</div>
+                <div class="card-example">
+                    minReplicas: 2 | maxReplicas: 10<br>
+                    target CPU: 70% → scale up if exceeded
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CRD ── -->
+        <div class="section" id="crd">
+            <h2>🧩 CRD — Custom Resource Definition</h2>
+            <p>Kubernetes ships with built-in types: Pod, Deployment, Service. A <strong>CRD</strong> lets you add new
+                custom types. Strimzi adds <code>Kafka</code> and <code>KafkaTopic</code> so you can manage Kafka like a
+                native K8s resource.</p>
+
+            <div class="diagram">
+                <h3>Built-in vs Custom resources</h3>
+                <div style="display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+                    <div style="flex:1; min-width:180px;">
+                        <div style="color:#63b3ed; font-size:.85rem; font-weight:700; margin-bottom:.5rem;">Built-in K8s
+                            types</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip"><span class="dot"></span> kind: Pod</div>
+                            <div class="pod-chip"><span class="dot"></span> kind: Deployment</div>
+                            <div class="pod-chip"><span class="dot"></span> kind: Service</div>
+                            <div class="pod-chip"><span class="dot"></span> kind: ConfigMap</div>
+                        </div>
+                    </div>
+                    <div style="flex:1; min-width:180px;">
+                        <div style="color:#b794f4; font-size:.85rem; font-weight:700; margin-bottom:.5rem;">Strimzi CRDs
+                            (custom)</div>
+                        <div class="pod-row" style="flex-direction:column; gap:.3rem;">
+                            <div class="pod-chip" style="border-color:#b794f4;"><span class="dot"
+                                    style="background:#b794f4"></span> kind: Kafka</div>
+                            <div class="pod-chip" style="border-color:#b794f4;"><span class="dot"
+                                    style="background:#b794f4"></span> kind: KafkaTopic</div>
+                            <div class="pod-chip" style="border-color:#b794f4;"><span class="dot"
+                                    style="background:#b794f4"></span> kind: KafkaNodePool</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🧩</span>
+                    <span class="card-title">CRD + Operator pattern</span>
+                    <span class="card-badge badge-infra">infra</span>
+                </div>
+                <div class="card-desc">CRD = teaching K8s a new vocabulary word. Operator = the brain that acts on it.
+                    You write <code>kind: Kafka</code>, the Strimzi Operator reads it and provisions brokers, ZooKeeper
+                    (or KRaft), topics, users — all automatically.</div>
+                <div class="card-example">
+                    <span>kubectl</span> get kafka -n rideflow<br>
+                    <span>kubectl</span> get kafkatopics -n rideflow<br>
+                    <span>kubectl</span> get crd | grep strimzi
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CHEAT SHEET ── -->
+        <div class="section" id="cheatsheet">
+            <h2>📌 Command Cheat Sheet</h2>
+
+            <div class="diagram" style="padding:0; overflow:hidden;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>What you want to do</th>
+                            <th>Command</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>List all pods</td>
+                            <td><code>kubectl get pods -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>List everything</td>
+                            <td><code>kubectl get all -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>See pod logs (live)</td>
+                            <td><code>kubectl logs -f &lt;pod&gt; -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Shell into a pod</td>
+                            <td><code>kubectl exec -it &lt;pod&gt; -n rideflow -- sh</code></td>
+                        </tr>
+                        <tr>
+                            <td>Describe a pod (events)</td>
+                            <td><code>kubectl describe pod &lt;pod&gt; -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Apply a YAML file</td>
+                            <td><code>kubectl apply -f file.yaml -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Delete a resource</td>
+                            <td><code>kubectl delete pod &lt;pod&gt; -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>See Kafka topics</td>
+                            <td><code>kubectl get kafkatopics -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Port-forward a service</td>
+                            <td><code>kubectl port-forward svc/rabbitmq 15672:15672 -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Check HPA status</td>
+                            <td><code>kubectl get hpa -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Check secrets</td>
+                            <td><code>kubectl get secrets -n rideflow</code></td>
+                        </tr>
+                        <tr>
+                            <td>Check ConfigMap</td>
+                            <td><code>kubectl get configmap rideflow-config -n rideflow -o yaml</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tip">
+                <strong>Shortcut:</strong> <code>k</code> is often aliased to <code>kubectl</code> — run
+                <code>alias k=kubectl</code> in your shell to save typing. You already have it based on your terminal
+                output!
+            </div>
+        </div>
+
+    </main>
+</body>
+
+</html>

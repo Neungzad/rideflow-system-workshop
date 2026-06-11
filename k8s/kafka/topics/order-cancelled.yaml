@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: order-cancelled
+  namespace: rideflow
+  labels:
+    strimzi.io/cluster: rideflow-kafka
+spec:
+  topicName: order.cancelled
+  partitions: 6
+  replicas: 1 # 3 for production
+  config:
+    retention.ms: 604800000 # 7 days
+    cleanup.policy: delete

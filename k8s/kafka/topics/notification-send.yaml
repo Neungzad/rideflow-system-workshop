@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: notification-send
+  namespace: rideflow
+  labels:
+    strimzi.io/cluster: rideflow-kafka
+spec:
+  topicName: notification.send
+  partitions: 6
+  replicas: 1 # 3 for production
+  config:
+    retention.ms: 86400000 # 1 day
+    cleanup.policy: delete

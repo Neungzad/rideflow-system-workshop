@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: driver-location
+  namespace: rideflow
+  labels:
+    strimzi.io/cluster: rideflow-kafka
+spec:
+  topicName: driver.location
+  partitions: 12 # High-frequency GPS updates — more partitions for parallelism
+  replicas: 1 # 3 for production
+  config:
+    retention.ms: 3600000 # 1 hour — location data expires quickly
+    cleanup.policy: delete

@@ -1,0 +1,13 @@
+name: runner-poc
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: arc-runner-set
+    steps:
+      - run: echo "hello from the hardened runner"
+      - run: node -v
+      - run: whoami

@@ -11,3 +11,17 @@ jobs:
       - run: echo "hello from the hardened runner"
       - run: node -v
       - run: whoami
+      - name: Check Docker support
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            echo "docker CLI found: $(docker --version)"
+            if docker info >/dev/null 2>&1; then
+              echo "docker daemon is reachable - this runner supports Docker"
+            else
+              echo "docker CLI present but daemon is NOT reachable"
+              exit 1
+            fi
+          else
+            echo "docker CLI not found - this runner does not support Docker"
+            exit 1
+          fi
